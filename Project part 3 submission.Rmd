@@ -1,0 +1,267 @@
+---
+title: "Project Part 3"
+author: "Chowdhury Abdul Mumin Ishmam"
+date: '2022-01-12'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question
+
+The response variable modeled is Number of wins for a premier league team in season 2017/2018
+
+
+The proposed explanatory variables are Goals For(GF) and Goals Against(GA). Number of Goals For(GF), in other words, number of goals scored by a team would help predict wins in a season as the more number of goals a team scores, the higher chances are there to win game. 
+
+Number of Goals Against(GA), in other words, number of goals conceded by a team would help predict wins in a season as the more number of goals a team concedes, the higher chances are there to not win a game. 
+
+
+```{r}
+library(car)
+pl <- read.csv("pl17:18.csv")
+knitr::kable(pl, "pipe", col.names =c("Team", "Wins", "Goals For", "Goals Against"), align =c("l","c","c","c"))
+```
+
+
+
+\newpage
+## Dataset
+
+Reference:
+
+“Premier League Table, Form Guide & Season Archives.” Premier League Table, Form Guide &amp; Season Archives, https://www.premierleague.com/tables?co=1&amp;se=79&amp;ha=-1. [Accessed Dec.15, 2021]
+
+
+Explanation of variables:
+The variable Wins is the number of wins by a premier league club in a span of 38 games for the 2017/2018 season.
+
+
+The variable Goals For(GF) is the number of goals scored by a premier league club in a span of 38 games for the 2017/2018 season.
+
+
+The variable Goals Against(GA) is the number of goals conceded by a premier league club in a span of 38 games for the 2017/2018 season.
+
+Scatterplots:
+
+Following are the scatterplots and summary for predicting Goals for and Number of wins
+
+```{r}
+#Scatterplot of GF and W
+plot(pl$GF, pl$W, xlab = "Goals For", ylab= "Number of Wins")
+pl2.lm <- lm(W ~ GF , data = pl)
+summary(pl2.lm)
+
+# R^2 = 0.8561, Adj_R^2 = 0.8481
+cor(pl$GF, pl$W)
+```
+Since $r^2 = 0.8561$, and correlation 0.9252 therefore there is a positive relationship of Goals For and Number of Wins.
+
+Following are the scatterplots and summary for predicting Goals Against and Number of wins
+
+```{r}
+#Scatterplot of GA and W
+plot(pl$GA, pl$W, xlab = "Goals Against", ylab= "Number of Wins")
+pl3.lm <- lm(W ~ GA , data = pl)
+summary(pl3.lm)
+
+# R^2 = 0.7417, Adj_R^2 = 0.7274
+cor(pl$GA, pl$W)
+```
+Since $r^2 = 0.7471$, and correlation of -0.8612 therefore there is a negative relationship of Goals Against and Number of Wins. 
+
+## Preliminary Model
+
+The following is the the model predicting Number of wins from Goals For(X1)
+
+```{r}
+lm.x1<- lm(W~GF, data = pl)
+lm.x1
+```
+Therefore, the regression line for predicting wins from goals for is:
+
+$\hat{y} = -1.8230 + 0.3118X{_1}$
+
+The following is the the model predicting Number of wins from Goals Against(X2)
+
+```{r}
+lm.x2<- lm(W~GA, data = pl)
+lm.x2
+```
+
+Therefore, the regression line for predicting wins from goals for is:
+
+$\hat{y} = 38.8969 - 0.4882X{_2}$
+
+
+The following is the the model predicting Number of wins from Goals For(X1) and Goals Against(X2)
+
+```{r}
+lm.x1x2<- lm(W~GF+GA, data = pl)
+lm.x1x2
+```
+
+Therefore, the regression line for predicting wins from goals for and goals against is:
+
+$\hat{y} = 15.5880 + 0.2129X{_1} - 0.2431X{_2}$
+
+
+```{r}
+summary(lm.x1x2)
+```
+
+As mentioned above in dataset part, the $R{_{adj}}^2$ for predicting wins from goals for is 0.8481 and predicting wins from goals against is 0.7274. Above we see that the $R{_{adj}}^2$ for predicting Wins from Goals for and Goals against combined increased from both the models to 0.9485.
+
+The following is the second-order model:
+
+```{r}
+pl.full <- lm(W~GF+GA+I(GF^2)+I(GA^2)+GF*GA, data= pl)
+pl.full
+```
+
+Therefore, the regression line for the full second-order model is: 
+
+$\hat{y} = 29.0398 + 0.2685X{_1} - 0.8451X{_2} - 0.0007179X^2_1 + 0.0059X^2_2 + 0.0001757X_1X_2$
+
+Below is the ANOVA test for the full second-order model stated above:
+
+```{r}
+summary(pl.full)
+```
+
+LEVEL OF SIGNIFICANCE: $\alpha = 0.05$
+
+HYPOTHESES: $H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = \beta_5 = 0$ vs $H_A:$ At least one $\beta_i \neq 0$ for i = 1,...,5
+
+DECISION RULE: Reject $H_0$ if p-value is $\leq \alpha$
+
+TEST STATISTIC: F = 78.1
+
+P-VALUE: $\approx$ 0
+
+CONCLUSION: As p-value is $\le \alpha$ = 0.05, reject $H_0$. Conclude there is sufficient evidence atleast one of the model terms is significant or does a sufficient job at explaining the variation on the number of wins. 
+
+
+## Model Refinement
+Below is the summary for the full model:
+
+```{r}
+summary(pl.full)
+```
+
+None of our model terms seems significant on the summary, therefore we will start eliminating the higher order model terms. 
+```{r}
+vif(pl.full)
+
+pl.full1 <- lm(W~GF + GA + I(GF^2) + GF*GA, data= pl)
+pl.full1
+summary(pl.full1)
+```
+Therefore, we can see that still only GF is significant but none else is. We will now eliminate the $GF^2$.
+
+```{r}
+vif(pl.full1)
+
+pl.full2 <- lm(W~GF + GA + GF*GA, data= pl)
+pl.full2
+summary(pl.full2)
+```
+Still, we can see that only GF is significant. Now, we will eliminate the final higher order term.
+
+```{r}
+vif(pl.full2)
+
+pl.reduced <- lm(W~GF + GA, data= pl)
+pl.reduced
+summary(pl.reduced)
+```
+
+Now, we can see that our model terms GF and GA are significant now. Therefore, this will be our reduced model. 
+Reduced Model:
+
+$\hat{y} = 15.5879 + 0.2129X{_1} - 0.2431X{_2}$
+
+Following are the co-efficients that are significant now and their p-values:
+
+Goals For(GF) and their p-value: $\approx 0$ 
+
+Goals Against(GA) and their p-value: $\approx 0$
+
+
+Following will be the nested F-test,
+
+```{r}
+anova(pl.reduced,pl.full)
+```
+
+Nested F-Test:
+
+LEVEL OF SIGNIFICANCE: $\alpha = 0.05$
+
+HYPOTHESES: $H_0: \beta_3 = \beta_4 = \beta_5 = 0$ vs $H_A:$ At least one $\beta_i \neq 0$ for i = 3,4,5
+
+DECISION RULE: Reject $H_0$ if p-value is $\leq \alpha$
+
+TEST STATISTIC: F = 1.5446
+
+P-VALUE: 0.2469
+
+CONCLUSION: As p-value is $\ge \alpha$ = 0.05, fail to reject $H_0$. Conclude there is insufficient evidence atleast one of the co-efficients for $GF^2, GA^2,GF*GA$ is non-zero. 
+
+## Final Model and Assesment
+
+Below we will perform the ANOVA test for our reduced model.
+
+```{r}
+summary(pl.reduced)
+```
+
+LEVEL OF SIGNIFICANCE: $\alpha = 0.05$
+
+HYPOTHESES: $H_0: \beta_3 = \beta_4 = \beta_5 = 0$ vs $H_A:$ At least one $\beta_i \neq 0$ for i = 3,4,5
+
+DECISION RULE: Reject $H_0$ if p-value is $\leq \alpha$
+
+TEST STATISTIC: F = 176
+
+P-VALUE: $\approx$ 0
+
+CONCLUSION: As p-value is $\le \alpha$ = 0.05, reject $H_0$. Conclude there is sufficient evidence atleast one of the eliminated model terms is significant or does a sufficient job at explaining the variation on the number of wins. 
+
+
+Final Regression equation is followed:
+
+
+$\hat{y} = 15.5875 + 0.2129X{_1} - 0.2431X{_2}$
+
+
+Final model Residual plot:
+
+```{r}
+reducedpl.res <- resid(pl.reduced)
+reducedpl.fitted <- fitted.values(pl.reduced)
+plot(reducedpl.fitted,reducedpl.res,xlab="y-hat",ylab="Residuals",main="Residual Plot")
+```
+
+The residual plot seems to have a no discernible pattern instead of one point above 30. It is fine, as most of the points follow a patten with equal spread, we can assume that linearity and constant variance conditions are met. 
+
+Final Model Nominal Quantile Plot:
+
+```{r}
+reducedpl.stdres <- rstandard(pl.reduced)
+qqnorm(reducedpl.stdres,ylab="Residuals",xlab="Normal scores",main="Final Nominal Quantile Plot")
+qqline(reducedpl.stdres)
+```
+
+It seems that the normality is fairly reasonable assumption as most of the points fall on the straight line with just a skewness on the left tail, but since regression line is fairly robust, we assume, the normality condition is met.
+
+## Conclusion
+
+Therefore we can conclude that Goal For and Goals Against are two explanatory variable that explains the variation in predicting the number of wins a premier league club. The tests used also suggests that individually, the predictors had a adjusted multiple co-efficient of determination of about 0.8481 and 0.7274. After predicting with the 2 predictors, the adjusted co-efficient of determination increases to 0.9485. This suggests that most of the variation in number of wins is from both predictors and therefore, combining the terms together was meaningful. 
+
+
+Final Regression Equation:
+
+$\hat{y} = 15.5875 + 0.2129X{_1} - 0.2431X{_2}$
